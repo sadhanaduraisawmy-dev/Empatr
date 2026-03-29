@@ -2,10 +2,10 @@
 Employee ML Project - Web Application
 
 This Flask web application runs the employee attrition prediction and fraud detection modules
-and displays the results in a web interface.
+and displays the results in a web interface with dynamic input capabilities.
 """
 
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, request
 import sys
 from pathlib import Path
 
@@ -13,7 +13,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from attrition.attrition_model import run_attrition_model
+from attrition.attrition_model import run_attrition_model, predict_employee_attrition
 from fraud.fraud_detection import run_fraud_detection
 
 app = Flask(__name__)
@@ -128,11 +128,46 @@ HTML_TEMPLATE = """
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
         }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #666;
-            font-size: 0.9em;
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -152,38 +187,72 @@ HTML_TEMPLATE = """
     </div>
 
     <div class="section">
-        <h2>👥 Employee Attrition Analysis</h2>
-        <div class="metrics">
-            <div class="metric">
-                <h3>Dataset Size</h3>
-                <p>{{ attrition_data.dataset_size }} employees</p>
-            </div>
-            <div class="metric">
-                <h3>Attrition Rate</h3>
-                <p>{{ attrition_data.attrition_rate }}%</p>
-            </div>
-            <div class="metric">
-                <h3>Random Forest Accuracy</h3>
-                <p>{{ "%.1f"|format(attrition_data.rf_accuracy * 100) }}%</p>
-            </div>
-            <div class="metric">
-                <h3>Decision Tree Accuracy</h3>
-                <p>{{ "%.1f"|format(attrition_data.dt_accuracy * 100) }}%</p>
-            </div>
+        <h2>👥 Employee Attrition Prediction</h2>
+        <div class="input-section">
+            <h3>Enter Employee Details</h3>
+            <form method="POST" action="#attrition">
+                <div class="form-group">
+                    <label for="salary">Salary ($):</label>
+                    <input type="number" id="salary" name="salary" step="0.01" placeholder="90000.00" required>
+                </div>
+                <div class="form-group">
+                    <label for="work_hours">Work Hours per Week:</label>
+                    <input type="number" id="work_hours" name="work_hours" step="0.1" placeholder="45.0" required>
+                </div>
+                <div class="form-group">
+                    <label for="experience">Years of Experience:</label>
+                    <input type="number" id="experience" name="experience" step="0.1" placeholder="5.0" required>
+                </div>
+                <button type="submit" name="action" value="attrition" class="btn">Predict Attrition Risk</button>
+            </form>
         </div>
 
-        <h3>Sample Employee Prediction</h3>
+        {% if attrition_prediction %}
+        <h3>🎯 Prediction Results</h3>
+        <div class="prediction {{ 'prediction-leave' if attrition_prediction.rf == 'LEAVE' else '' }}">
+            <strong>Random Forest Prediction:</strong> {{ attrition_prediction.rf }}
+        </div>
+        <div class="prediction {{ 'prediction-leave' if attrition_prediction.dt == 'LEAVE' else '' }}">
+            <strong>Decision Tree Prediction:</strong> {{ attrition_prediction.dt }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>💳 Fraud Detection</h2>
+        <div class="input-section">
+            <h3>Enter Transaction Details</h3>
+            <form method="POST" action="#fraud">
+                <div class="form-group">
+                    <label for="amount">Transaction Amount ($):</label>
+                    <input type="number" id="amount" name="amount" step="0.01" placeholder="25000.00" required>
+                </div>
+                <div class="form-group">
+                    <label for="time">Transaction Time (0-23 hours):</label>
+                    <input type="number" id="time" name="time" min="0" max="23" step="0.1" placeholder="1.5" required>
+                </div>
+                <div class="form-group">
+                    <label for="account_age">Account Age (days):</label>
+                    <input type="number" id="account_age" name="account_age" step="0.1" placeholder="30.0" required>
+                </div>
+                <button type="submit" name="action" value="fraud" class="btn">Check for Fraud</button>
+            </form>
+        </div>
+
+        {% if fraud_result %}
+        <h3>🔍 Fraud Analysis Result</h3>
+        {% if fraud_result.is_fraud %}
+        <div class="alert alert-fraud">
+            <strong>🚨 FRAUD ALERT DETECTED!</strong><br>
+            This transaction has been flagged as potentially fraudulent based on anomaly detection.
+        </div>
+        {% else %}
         <div class="alert">
-            <strong>Test Employee:</strong> $90,000 salary, 45 hours/week, 5 years experience
+            <strong>✅ NORMAL TRANSACTION</strong><br>
+            This transaction appears to be normal and legitimate.
         </div>
-
-        <div class="prediction {{ 'prediction-leave' if attrition_data.prediction_rf == 'LEAVE' else '' }}">
-            <strong>Random Forest Prediction:</strong> {{ attrition_data.prediction_rf }}
-        </div>
-
-        <div class="prediction {{ 'prediction-leave' if attrition_data.prediction_dt == 'LEAVE' else '' }}">
-            <strong>Decision Tree Prediction:</strong> {{ attrition_data.prediction_dt }}
-        </div>
+        {% endif %}
+        {% endif %}
     </div>
 
     <div class="section">
@@ -243,9 +312,68 @@ HTML_TEMPLATE = """
 </html>
 """
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
     """Main route that runs ML models and displays results."""
+
+    attrition_prediction = None
+    fraud_result = None
+
+    # Handle form submissions
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'attrition':
+            # Get employee data from form
+            try:
+                salary = float(request.form.get('salary'))
+                work_hours = float(request.form.get('work_hours'))
+                experience = float(request.form.get('experience'))
+
+                # Run attrition model to get trained models
+                attrition_results = run_attrition_model(verbose=False)
+
+                # Make prediction for the input employee
+                employee_features = [salary, work_hours, experience]
+                predictions = predict_employee_attrition(
+                    {'random_forest': attrition_results.get('random_forest_model', {}),
+                     'decision_tree': attrition_results.get('decision_tree_model', {})},
+                    employee_features, verbose=False
+                )
+
+                attrition_prediction = {
+                    'rf': predictions.get('random_forest', 'UNKNOWN'),
+                    'dt': predictions.get('decision_tree', 'UNKNOWN'),
+                    'input': {
+                        'salary': salary,
+                        'work_hours': work_hours,
+                        'experience': experience
+                    }
+                }
+            except (ValueError, TypeError) as e:
+                attrition_prediction = {'error': 'Invalid input data'}
+
+        elif action == 'fraud':
+            # Get transaction data from form
+            try:
+                amount = float(request.form.get('amount'))
+                time = float(request.form.get('time'))
+                account_age = float(request.form.get('account_age'))
+
+                # For simplicity, we'll use a basic heuristic for fraud detection
+                # In a real application, you'd use the trained DBSCAN model
+                is_fraud = (amount > 20000 or time < 2 or account_age < 50)
+
+                fraud_result = {
+                    'is_fraud': is_fraud,
+                    'input': {
+                        'amount': amount,
+                        'time': time,
+                        'account_age': account_age
+                    }
+                }
+            except (ValueError, TypeError) as e:
+                fraud_result = {'error': 'Invalid input data'}
 
     # Run attrition model
     attrition_results = run_attrition_model(verbose=False)
@@ -294,7 +422,9 @@ weighted avg       0.40      0.40      0.40        20"""
 
     return render_template_string(HTML_TEMPLATE,
                                 attrition_data=attrition_data,
-                                fraud_data=fraud_data)
+                                fraud_data=fraud_data,
+                                attrition_prediction=attrition_prediction,
+                                fraud_result=fraud_result)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

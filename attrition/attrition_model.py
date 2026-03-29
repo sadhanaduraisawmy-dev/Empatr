@@ -196,4 +196,8 @@ def run_attrition_model(verbose=True):
     new_employee = [90000, 45, 5]
     predictions = predict_employee_attrition(models, new_employee, verbose=verbose)
     
-    return predictions
+    return {
+        'predictions': predictions,
+        'random_forest_model': models.get('random_forest', {}),
+        'decision_tree_model': models.get('decision_tree', {})
+    }
