@@ -14,7 +14,6 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from attrition.attrition_model import run_attrition_model, predict_employee_attrition
-from fraud.fraud_detection import run_fraud_detection
 
 app = Flask(__name__)
 
@@ -173,16 +172,16 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="header">
-        <h1>🏢 Employee ML Project</h1>
-        <p>Machine Learning Solutions for HR Analytics & Fraud Detection</p>
+        <h1>👥 Employee Attrition Predictor</h1>
+        <p>Machine Learning Solution for HR Analytics & Employee Turnover Prediction</p>
     </div>
 
     <div class="section">
         <h2>📊 Project Overview</h2>
-        <p>This application demonstrates two key machine learning applications:</p>
+        <p>This application demonstrates employee attrition prediction using machine learning:</p>
         <ul>
             <li><strong>Employee Attrition Prediction:</strong> Uses Random Forest and Decision Tree models to predict employee turnover</li>
-            <li><strong>Fraud Anomaly Detection:</strong> Uses DBSCAN clustering to identify suspicious financial transactions</li>
+            <li><strong>Interactive Input:</strong> Enter employee details to get personalized predictions</li>
         </ul>
     </div>
 
@@ -219,82 +218,15 @@ HTML_TEMPLATE = """
     </div>
 
     <div class="section">
-        <h2>💳 Fraud Detection</h2>
-        <div class="input-section">
-            <h3>Enter Transaction Details</h3>
-            <form method="POST" action="#fraud">
-                <div class="form-group">
-                    <label for="amount">Transaction Amount ($):</label>
-                    <input type="number" id="amount" name="amount" step="0.01" placeholder="25000.00" required>
-                </div>
-                <div class="form-group">
-                    <label for="time">Transaction Time (0-23 hours):</label>
-                    <input type="number" id="time" name="time" min="0" max="23" step="0.1" placeholder="1.5" required>
-                </div>
-                <div class="form-group">
-                    <label for="account_age">Account Age (days):</label>
-                    <input type="number" id="account_age" name="account_age" step="0.1" placeholder="30.0" required>
-                </div>
-                <button type="submit" name="action" value="fraud" class="btn">Check for Fraud</button>
-            </form>
-        </div>
+        <h2>� Model Performance Details</h2>
 
-        {% if fraud_result %}
-        <h3>🔍 Fraud Analysis Result</h3>
-        {% if fraud_result.is_fraud %}
-        <div class="alert alert-fraud">
-            <strong>🚨 FRAUD ALERT DETECTED!</strong><br>
-            This transaction has been flagged as potentially fraudulent based on anomaly detection.
-        </div>
-        {% else %}
-        <div class="alert">
-            <strong>✅ NORMAL TRANSACTION</strong><br>
-            This transaction appears to be normal and legitimate.
-        </div>
-        {% endif %}
-        {% endif %}
+        <h3>Employee Attrition - Classification Reports</h3>
+        <h4>Random Forest</h4>
+        <pre>{{ attrition_data.rf_report }}</pre>
+
+        <h4>Decision Tree</h4>
+        <pre>{{ attrition_data.dt_report }}</pre>
     </div>
-
-    <div class="section">
-        <h2>💳 Fraud Detection Results</h2>
-        <div class="metrics">
-            <div class="metric">
-                <h3>Total Transactions</h3>
-                <p>{{ fraud_data.total_transactions }}</p>
-            </div>
-            <div class="metric">
-                <h3>Normal Transactions</h3>
-                <p>{{ fraud_data.normal_transactions }}</p>
-            </div>
-            <div class="metric">
-                <h3>Fraudulent Transactions</h3>
-                <p>{{ fraud_data.fraudulent_transactions }}</p>
-            </div>
-            <div class="metric">
-                <h3>Detection Rate</h3>
-                <p>{{ "%.1f"|format((fraud_data.fraudulent_transactions / fraud_data.total_transactions) * 100) }}%</p>
-            </div>
-        </div>
-
-        {% if fraud_data.fraudulent_transactions > 0 %}
-        <h3>🚨 Fraud Alerts</h3>
-        {% for fraud in fraud_data.fraud_alerts %}
-        <div class="alert alert-fraud">
-            <strong>FRAUD ALERT - Transaction ID: {{ fraud.transaction_id }}</strong><br>
-            Amount: ${{ "%.2f"|format(fraud.amount) }}<br>
-            Time: {{ "%.1f"|format(fraud.time) }}:00 hours<br>
-            Account Age: {{ "%.1f"|format(fraud.account_age) }} days
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="alert">
-            ✅ No fraudulent transactions detected in the current dataset.
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="section">
-        <h2>📈 Model Performance Details</h2>
 
         <h3>Employee Attrition - Classification Reports</h3>
         <h4>Random Forest</h4>
@@ -306,7 +238,7 @@ HTML_TEMPLATE = """
 
     <div class="footer">
         <p>Built with Python, scikit-learn, and Flask | Deployed on Render</p>
-        <p>Last updated: March 29, 2026</p>
+        <p>Employee Attrition Prediction Model | Last updated: March 29, 2026</p>
     </div>
 </body>
 </html>
@@ -317,7 +249,6 @@ def home():
     """Main route that runs ML models and displays results."""
 
     attrition_prediction = None
-    fraud_result = None
 
     # Handle form submissions
     if request.method == 'POST':
@@ -353,41 +284,17 @@ def home():
             except (ValueError, TypeError) as e:
                 attrition_prediction = {'error': 'Invalid input data'}
 
-        elif action == 'fraud':
-            # Get transaction data from form
-            try:
-                amount = float(request.form.get('amount'))
-                time = float(request.form.get('time'))
-                account_age = float(request.form.get('account_age'))
-
-                # For simplicity, we'll use a basic heuristic for fraud detection
-                # In a real application, you'd use the trained DBSCAN model
-                is_fraud = (amount > 20000 or time < 2 or account_age < 50)
-
-                fraud_result = {
-                    'is_fraud': is_fraud,
-                    'input': {
-                        'amount': amount,
-                        'time': time,
-                        'account_age': account_age
-                    }
-                }
-            except (ValueError, TypeError) as e:
-                fraud_result = {'error': 'Invalid input data'}
-
     # Run attrition model
     attrition_results = run_attrition_model(verbose=False)
-    
-    # Run fraud detection
-    fraud_df, fraud_outliers = run_fraud_detection(verbose=False)
+
     # Prepare data for template
     attrition_data = {
         'dataset_size': 100,  # From the model output
         'attrition_rate': 54.0,  # From the model output
         'rf_accuracy': 0.4,  # From the model output
         'dt_accuracy': 0.4,  # From the model output
-        'prediction_rf': attrition_results.get('random_forest', 'UNKNOWN'),
-        'prediction_dt': attrition_results.get('decision_tree', 'UNKNOWN'),
+        'prediction_rf': attrition_results.get('predictions', {}).get('random_forest', 'UNKNOWN'),
+        'prediction_dt': attrition_results.get('predictions', {}).get('decision_tree', 'UNKNOWN'),
         'rf_report': """              precision    recall  f1-score   support
 
            0       0.40      0.40      0.40        10
@@ -404,27 +311,9 @@ weighted avg       0.40      0.40      0.40        20""",
 weighted avg       0.40      0.40      0.40        20"""
     }
 
-    fraud_data = {
-        'total_transactions': len(fraud_df),
-        'normal_transactions': len(fraud_df) - len(fraud_outliers),
-        'fraudulent_transactions': len(fraud_outliers),
-        'fraud_alerts': []
-    }
-
-    # Prepare fraud alerts
-    for idx, row in fraud_outliers.iterrows():
-        fraud_data['fraud_alerts'].append({
-            'transaction_id': int(row['transaction_id']),
-            'amount': row['transaction_amount'],
-            'time': row['transaction_time'],
-            'account_age': row['account_age_days']
-        })
-
     return render_template_string(HTML_TEMPLATE,
                                 attrition_data=attrition_data,
-                                fraud_data=fraud_data,
-                                attrition_prediction=attrition_prediction,
-                                fraud_result=fraud_result)
+                                attrition_prediction=attrition_prediction)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

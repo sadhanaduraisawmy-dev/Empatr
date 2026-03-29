@@ -1,6 +1,6 @@
-# Employee ML Project
+# Employee Attrition Predictor
 
-A comprehensive machine learning project for employee attrition prediction and fraud anomaly detection using scikit-learn.
+A machine learning web application for employee attrition prediction using scikit-learn.
 
 ## 📋 Table of Contents
 
@@ -9,7 +9,7 @@ A comprehensive machine learning project for employee attrition prediction and f
 - [Web Deployment](#web-deployment)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
-- [Modules](#modules)
+- [Features](#features)
 - [Output Examples](#output-examples)
 - [Requirements](#requirements)
 
@@ -17,18 +17,15 @@ A comprehensive machine learning project for employee attrition prediction and f
 
 ## 🎯 Project Overview
 
-This project implements two machine learning solutions:
-
-1. **Employee Attrition Prediction**: Classification models to predict if employees will leave
-2. **Fraud Anomaly Detection**: Anomaly detection to identify suspicious transactions
+This application implements employee attrition prediction using machine learning:
 
 ### Key Features
 - ✅ Multiple classification algorithms (Random Forest, Decision Tree)
-- ✅ Clustering-based anomaly detection (DBSCAN)
+- ✅ Interactive web interface for real-time predictions
+- ✅ Dynamic input forms for employee data
 - ✅ Feature normalization with StandardScaler
 - ✅ Sample datasets with realistic data
 - ✅ Modular, well-documented code
-- ✅ Web interface for easy visualization
 
 ---
 
@@ -125,10 +122,9 @@ Visit `http://localhost:5000` to see the results.
    - `PYTHON_VERSION`: `3.11`
 
 The web app will be available at your Render URL, showing:
-- Employee attrition predictions
-- Fraud detection results
+- Employee attrition predictions with interactive input
 - Model performance metrics
-- Interactive visualizations
+- Real-time predictions based on user input
 
 ---
 
